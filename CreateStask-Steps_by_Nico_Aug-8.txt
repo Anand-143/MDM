@@ -1,0 +1,262 @@
+NEEITO SUBMIT COMMAND
+neeaws neeito submit fp197-read-army-neeito.json -a 516627182506 -v FPLTest
+
+CLEAR EXPIRING TOCKENS
+1. Open a terminal
+2. Clear the variables
+setx AWS_ACCESS_KEY_ID ""
+setx AWS_SECRET_ACCESS_KEY ""
+3. Close terminal
+4. Delete .aws folder
+
+NEE AWS CREATE STACK STEPS
+1. neeaws login
+2. Enter Slid
+3. Enter Password
+4. Enter PIN + RSA Token
+5. Select DevOps role and Environment
+6. Set Proxies by executing the following commands:
+set HTTP_PROXY=webproxyfpl.com:8080
+set HTTPS_PROXY=webproxy.fpl.com:8080
+set NO_PROXY=169.254.169.254
+7. Assume Neeito Role using the following command: 
+neeaws neeito assume arn:aws:iam::977465404123:role/neeito-build-fp197-read-army-mdm -p mdmprofile
+neeaws neeito assume arn:aws:iam::516627182506:role/neeito-build-fp197-read-army-mdm -p mdmprofile
+neeaws neeito assume arn:aws:iam::485449107334:role/neeito-build-fp197-read-army-mdm -p mdmprofile
+neeaws neeito assume arn:aws:iam::430004966399:role/neeito-build-fp197-read-army-mdm -p mdmprofile
+
+
+neeaws neeito assume arn:aws:iam::516627182506:role/neeito-build-fp197-read-army-mdm-synthetics-canary -p mdmprofile
+neeaws neeito assume arn:aws:iam::485449107334:role/neeito-build-fp197-read-army-mdm-synthetics-canary -p mdmprofile
+neeaws neeito assume arn:aws:iam::430004966399:role/neeito-build-fp197-read-army-mdm-synthetics-canary -p mdmprofile
+
+
+
+
+
+8. Set Variables based on previous step
+	setx AWS_ACCESS_KEY_ID XXX
+	setx AWS_SECRET_ACCESS_KEY XXX
+	setx AWS_SESSION_TOKEN XXX
+9. Execute aws cloudformation create-stack
+	Ex: aws cloudformation create-stack --stack-name fp197-read-army-mdm-roles --region us-east-1 --template-url https://2ftv-fp197-read-army-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-roles-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::516627182506:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --profile mdmprofile
+10. If create-stack command is successful, check CloudFormation status using AWS Console
+
+NEE AWS DELETE STACK
+1. Assume Neeito Role using the following command: 
+	neeaws neeito assume arn:aws:iam::977465404123:role/neeito-build-fp197-read-army-mdm -p mdmprofile
+2. Set Variables based on previous step
+	setx AWS_ACCESS_KEY_ID XXX
+	setx AWS_SECRET_ACCESS_KEY XXX
+	setx AWS_SESSION_TOKEN XXX
+3. Execute aws cloudformation delete-stack
+	Ex: aws cloudformation delete-stack --stack-name fp197-read-army-mdm-roles --region us-east-1 --profile mdmprofile
+	
+NEE AWS UPDATE STACK
+1. Assume Neeito Role using the following command: 
+	neeaws neeito assume arn:aws:iam::977465404123:role/neeito-build-fp197-read-army-mdm -p mdmprofile
+2. Set Variables based on previous step
+	setx AWS_ACCESS_KEY_ID XXX
+	setx AWS_SECRET_ACCESS_KEY XXX
+	setx AWS_SESSION_TOKEN XXX
+3. Execute aws cloudformation delete-stack
+	Ex: aws cloudformation update-stack --stack-name fp197-read-army-mdm-roles --region us-east-1 --template-url https://2ftv-fp197-read-army-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-roles-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::516627182506:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --profile mdmprofile
+	
+AWS CLI USEFUL COMMANDS
+
+
+FPL NON PROD
+aws cloudformation update-stack --stack-name fp197-read-army-mdm-roles --region us-east-1 --template-url https://2fnv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-roles-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::977465404123:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --profile mdmprofile
+
+
+
+FPL TEST
+aws cloudformation create-stack --stack-name fp197-read-army-mdm-roles --region us-east-1 --template-url https://2ftv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-roles-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::516627182506:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --profile mdmprofile
+aws cloudformation create-stack --stack-name fp197-read-army-mdm-sg --region us-east-1 --template-url https://2ftv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-sg-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::516627182506:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --capabilities CAPABILITY_AUTO_EXPAND --profile mdmprofile
+aws cloudformation create-stack --stack-name fp197-read-army-mdm-rds-proxy --region us-east-1 --template-url https://2ftv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-rds-proxy-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::516627182506:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --capabilities CAPABILITY_AUTO_EXPAND --profile mdmprofile
+aws cloudformation create-stack --stack-name fp197-read-army-mdm-resources --region us-east-1 --template-url https://2ftv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-resources-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::516627182506:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --capabilities CAPABILITY_AUTO_EXPAND --profile mdmprofile
+aws cloudformation update-stack --stack-name fp197-read-army-mdm-resources --region us-east-1 --template-url https://2ftv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-resources-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::516627182506:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --capabilities CAPABILITY_AUTO_EXPAND --profile mdmprofile
+aws cloudformation update-stack --stack-name fp197-read-army-mdm-resources --region us-east-1 --template-url https://2ftv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-resources-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::516627182506:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --capabilities CAPABILITY_AUTO_EXPAND --profile mdmprofile
+
+Sythetic canary
+aws cloudformation create-stack --stack-name fp197-read-army-mdm-synthetic-canary --region us-east-1 --template-url https://2ftv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-synthetic-canary-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::516627182506:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm-synthetics-canary" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --capabilities CAPABILITY_AUTO_EXPAND --profile mdmprofile
+
+aws cloudformation delete-stack --stack-name fp197-read-army-mdm-synthetic-canary --region us-east-1 --profile mdmprofile
+
+aws cloudformation delete-stack --stack-name fp197-read-army-mdm-resources --region us-east-1 --profile mdmprofile
+
+aws s3 cp "C:\Users\NXZ084G\OneDrive - NEE\Documents\FP&L\MassMarket\AWS\CloudFormationTemplates\fp197-read-army-mdm-roles-cf.yaml" s3://2ftv-fp197-mdm-cf-s3/
+aws s3 cp "C:\Users\NXZ084G\OneDrive - NEE\Documents\FP&L\MassMarket\AWS\CloudFormationTemplates\fp197-read-army-mdm-sg-cf.yaml" s3://2ftv-fp197-mdm-cf-s3/
+aws s3 cp "C:\Users\NXZ084G\OneDrive - NEE\Documents\FP&L\MassMarket\AWS\CloudFormationTemplates\fp197-read-army-mdm-rds-proxy-cf.yaml" s3://2ftv-fp197-mdm-cf-s3/
+aws s3 cp "C:\Users\NXZ084G\OneDrive - NEE\Documents\FP&L\MassMarket\AWS\CloudFormationTemplates\fp197-read-army-mdm-resources-cf.yaml" s3://2ftv-fp197-mdm-cf-s3/
+
+FPL QA
+aws cloudformation create-stack --stack-name fp197-read-army-mdm-roles --region us-east-1 --template-url https://2fqv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-roles-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::485449107334:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --profile mdmprofile
+aws cloudformation update-stack --stack-name fp197-read-army-mdm-roles --region us-east-1 --template-url https://2fqv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-roles-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::485449107334:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --profile mdmprofile
+aws cloudformation create-stack --stack-name fp197-read-army-mdm-sg --region us-east-1 --template-url https://2fqv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-sg-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::485449107334:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --capabilities CAPABILITY_AUTO_EXPAND --profile mdmprofile
+aws cloudformation create-stack --stack-name fp197-read-army-mdm-rds-proxy --region us-east-1 --template-url https://2fqv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-rds-proxy-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::485449107334:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --capabilities CAPABILITY_AUTO_EXPAND --profile mdmprofile
+aws cloudformation create-stack --stack-name fp197-read-army-mdm-resources --region us-east-1 --template-url https://2fqv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-resources-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::485449107334:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --capabilities CAPABILITY_AUTO_EXPAND --profile mdmprofile
+aws cloudformation update-stack --stack-name fp197-read-army-mdm-resources --region us-east-1 --template-url https://2fqv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-resources-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::485449107334:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --capabilities CAPABILITY_AUTO_EXPAND --profile mdmprofile
+
+Synthetic Canary:
+aws cloudformation create-stack --stack-name fp197-read-army-mdm-synthetic-canary --region us-east-1 --template-url https://2fqv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-synthetic-canary-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::485449107334:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm-synthetics-canary" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --capabilities CAPABILITY_AUTO_EXPAND --profile mdmprofile
+
+
+aws cloudformation delete-stack --stack-name fp197-read-army-mdm-resources --region us-east-1 --profile mdmprofile
+
+aws cloudformation update-stack --stack-name fp197-read-army-mdm-roles --region us-east-1 --template-url https://2fqv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-roles-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::485449107334:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --profile mdmprofile
+
+
+aws s3 cp "C:\Users\NXZ084G\OneDrive - NEE\Documents\FP&L\MassMarket\AWS\CloudFormationTemplates\fp197-read-army-mdm-roles-cf.yaml" s3://2fqv-fp197-mdm-cf-s3/
+aws s3 cp "C:\Users\NXZ084G\OneDrive - NEE\Documents\FP&L\MassMarket\AWS\CloudFormationTemplates\fp197-read-army-mdm-sg-cf.yaml" s3://2fqv-fp197-mdm-cf-s3/
+aws s3 cp "C:\Users\NXZ084G\OneDrive - NEE\Documents\FP&L\MassMarket\AWS\CloudFormationTemplates\fp197-read-army-mdm-rds-proxy-cf.yaml" s3://2fqv-fp197-mdm-cf-s3/
+aws s3 cp "C:\Users\NXZ084G\OneDrive - NEE\Documents\FP&L\MassMarket\AWS\CloudFormationTemplates\fp197-read-army-mdm-resources-cf.yaml" s3://2fqv-fp197-mdm-cf-s3/
+
+FPL Prod
+aws cloudformation create-stack --stack-name fp197-read-army-mdm-roles --region us-east-1 --template-url https://2fpv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-roles-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::430004966399:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --profile mdmprofile
+aws cloudformation create-stack --stack-name fp197-read-army-mdm-sg --region us-east-1 --template-url https://2fpv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-sg-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::430004966399:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --capabilities CAPABILITY_AUTO_EXPAND --profile mdmprofile
+aws cloudformation create-stack --stack-name fp197-read-army-mdm-rds-proxy --region us-east-1 --template-url https://2fpv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-rds-proxy-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::430004966399:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --capabilities CAPABILITY_AUTO_EXPAND --profile mdmprofile
+aws cloudformation create-stack --stack-name fp197-read-army-mdm-resources --region us-east-1 --template-url https://2fpv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-resources-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::430004966399:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --capabilities CAPABILITY_AUTO_EXPAND --profile mdmprofile
+aws cloudformation update-stack --stack-name fp197-read-army-mdm-resources --region us-east-1 --template-url https://2fpv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-resources-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::430004966399:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --capabilities CAPABILITY_AUTO_EXPAND --profile mdmprofile
+
+Synthetianary
+aws cloudformation create-stack --stack-name fp197-read-army-mdm-synthetic-canary --region us-east-1 --template-url https://2fpv-fp197-mdm-cf-s3.s3.amazonaws.com/fp197-read-army-mdm-synthetic-canary-cf.yaml --parameters ParameterKey=RolePermissionBoundary,ParameterValue="arn:aws:iam::430004966399:policy/neeito-app-pb-neeito-build-fp197-read-army-mdm-synthetics-canary" --tags Key=AppCode,Value=FP197 --capabilities CAPABILITY_NAMED_IAM --capabilities CAPABILITY_AUTO_EXPAND --profile mdmprofile
+
+
+
+aws cloudformation delete-stack --stack-name fp197-read-army-mdm-resources --region us-east-1 --profile mdmprofile
+
+aws s3 cp "C:\Users\NXZ084G\OneDrive - NEE\Documents\FP&L\MassMarket\AWS\CloudFormationTemplates\fp197-read-army-mdm-roles-cf.yaml" s3://2fpv-fp197-mdm-cf-s3/
+aws s3 cp "C:\Users\NXZ084G\OneDrive - NEE\Documents\FP&L\MassMarket\AWS\CloudFormationTemplates\fp197-read-army-mdm-sg-cf.yaml" s3://2fpv-fp197-mdm-cf-s3/
+aws s3 cp "C:\Users\NXZ084G\OneDrive - NEE\Documents\FP&L\MassMarket\AWS\CloudFormationTemplates\fp197-read-army-mdm-rds-proxy-cf.yaml" s3://2fpv-fp197-mdm-cf-s3/
+aws s3 cp "C:\Users\NXZ084G\OneDrive - NEE\Documents\FP&L\MassMarket\AWS\CloudFormationTemplates\fp197-read-army-mdm-resources-cf.yaml" s3://2fpv-fp197-mdm-cf-s3/
+
+AWS CLI UPDATE LAMBDA FUNCTIONS
+aws lambda publish-layer-version --layer-name 2ftv-fp197-mdm-DatabaseLayer --content "S3Bucket=2ftv-fp197-mdm-cf-s3,S3Key=DatabaseLayer/nodejs.zip" --compatible-runtimes nodejs14.x
+aws lambda update-function-configuration --function-name 2ftv-fp197-mdm-ReadingImport-LF --layers "arn:aws:lambda:us-east-1:516627182506:layer:2ftv-fp197-mdm-DatabaseLayer:8" "arn:aws:lambda:us-east-1:516627182506:layer:2ftv-fp197-mdm-MailLayer:2" "arn:aws:lambda:us-east-1:516627182506:layer:2ftv-fp197-mdm-SFTPLayer:2"
+aws lambda update-function-configuration --function-name 2ftv-fp197-mdm-RegisterRead-GET-API-LF --layers "arn:aws:lambda:us-east-1:516627182506:layer:2ftv-fp197-mdm-DatabaseLayer:5" "arn:aws:lambda:us-east-1:516627182506:layer:2ftv-fp197-mdm-MailLayer:1" "arn:aws:lambda:us-east-1:516627182506:layer:2ftv-fp197-mdm-SFTPLayer:1"
+
+
+aws s3 cp "C:\Users\AXA0J2T\Downloads\ZBI_R_FR_FPLNW_BILL.CSV" s3://2ftv-od852-fixedrate-sftp-files-s3/CAMS_Data/ --debug
+
+
+'x-amz-request-id': 'A8JCCZPT2FCGK0J9',
+
+C:\Users\AXA0J2T\Downloads>
+
+IAM ROLE POLICY TEMPLATE
+				{
+					"Effect": "Allow",
+					"Action": [
+					
+					],
+					"Resource": [
+					
+					]
+				}
+				
+
+           - Effect: Allow
+                Action:
+                Resource:
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				2ftv-fp197-mdm-SynthCanary-Alarm
