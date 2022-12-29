@@ -1,0 +1,3564 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Serverless MDM Resources Stack
+
+Parameters:
+  AppCode:
+    Type: String
+    Default: FP197
+  AppCodeLower:
+    Type: String
+    Default: fp197
+  AppName:
+    Type: String
+    Default: mdm
+  TeamName:
+    Type: String
+    Default: read-army
+  Region:
+    Type: String
+    AllowedValues:
+      - us-east-1
+      - us-east-2
+    Default: us-east-1
+  Department:
+    Type: String
+    Default: "Customer Service IT"
+  OwnerContact:
+    Type: String
+    Default: "nicolas.zerrate@fpl.com"
+  RolePermissionBoundary:
+    Type: String
+    Description: 'Please enter ARN of Neeito Role'
+  SFTPUsername:
+    Type: String
+    Description: 'Please Enter SFTP User Name'
+    Default: "fpl_aws_resp_res_ci_in"
+  RDSProxyPort:
+    Type: String
+    Description: 'Please Enter RDS Proxy Port'
+    Default: "5432"
+  SFTPPort:
+    Type: String
+    Description: 'Please Enter SFTP Port'
+    Default: "10022"
+  SFTPPassword:
+    Type: String
+    NoEcho: true
+    Default: "@a2L*AT#"
+    Description: 'Please Enter SFTP Password'
+
+Mappings:
+  AccountIDMap:
+    "237980099910":
+      VPCShortName: FPLSandbox
+      VPCShortNameLower: fplsandbox
+    "977465404123":
+      VPCShortName: FPLDev
+      VPCShortNameLower: fpldev
+      RDSDatabaseName: mdmd
+      SESDomain: "mdm-app@mdm.fpltest.com"
+      WAFID: "arn:aws:wafv2:us-east-1:977465404123:global/webacl/FMManagedWebACLV2WAFv2-Policy_For_Testing_And_Dev_Domains1611254129062/d6b8c4be-d39a-4fc2-bbd3-d11157907aec"
+    "516627182506":
+      VPCShortName: FPLTest
+      VPCShortNameLower: fpltest
+      RDSDatabaseName: mdmt
+      Epbucketname: 2epv-fp197-mdm-fpltest-s3
+      APIVPCEndpoint: vpce-0cafef59aa0af92f5
+      SFTPHostName: "b2bqa-int.nee.com"
+      SESDomain: "mdm-app@mdm.fpltest.com"
+      WebAppURL: "https://mdm-fpltest.fpl.com"
+      CognitoCallBackURL: "https://mdm-fpltest.fpl.com/login"
+      WAFID: "arn:aws:wafv2:us-east-1:516627182506:global/webacl/FMManagedWebACLV2WAFv2-Policy_For_Testing_And_Dev_Domains1611252822400/c863767f-8bf3-447c-955e-8b26c686b215"
+      RDSProxyEndpoint: "aws-ftv-fp197-mdm-rds-proxy.proxy-cq5nryu9qrxd.us-east-1.rds.amazonaws.com"
+      SNOWSNSTopic: "arn:aws:sns:us-east-1:516627182506:NE789-IncidentTicketProd"
+      SupportDL: "dl-csit-mdm-support-alerts-test@nexteraenergy.com"
+      BusinessDL: "DL-CSIT-MDM-BUSINESS-ALERTS-TEST@nexteraenergy.com"
+      SNOWDescriptionSEV3: "APP=MDM arsRequired=0 arsSeverity=SEV3 arsAutoTag=L2_AMS_FPLS_COG emailRequired=1 emailSubject=Tivoli notification emailAddress=DL-csit-mdm-support-alerts"
+      SNOWDescriptionSEV4: "APP=MDM arsRequired=0 arsSeverity=SEV4 arsAutoTag=L2_AMS_FPLS_COG emailRequired=1 emailSubject=Tivoli notification emailAddress=DL-csit-mdm-support-alerts"
+      BillImpAlarmEDTCron: "cron(0 13 * * ? *)"
+      BillImpAlarmESTCron: "cron(0 14 * * ? *)"
+      DemandResetCompareCron: "cron(30 16 * * ? *)"
+      DemandResetCompareESTCron: "cron(30 17 * * ? *)"
+      DemandResetResponseCron: "cron(30 13 * * ? *)"
+      DemandResetResponseESTCron: "cron(30 14 * * ? *)"
+      DemandResetRequestCron: "cron(0 10 * * ? *)"
+      DemandResetRequestESTCron: "cron(0 11 * * ? *)"
+      CDPMissingDataNotifCron: "cron(15 14 * * ? *)"
+      CDPMissingDataNotifESTCron: "cron(15 15 * * ? *)"
+      CDPProjVSActCron: "cron(50 16 * * ? *)"
+      CDPProjVSActESTCron: "cron(50 17 * * ? *)"
+      CDPNoActionCron: "cron(20 17 * * ? *)"
+      CDPNoActionESTCron: "cron(20 18 * * ? *)"
+      BillingResponseCICron: "cron(30 16 * * ? *)"
+      BillingResponseCIESTCron: "cron(30 17 * * ? *)"
+      BillingResponseRESCron: "cron(40 16 * * ? *)"
+      BillingResponseRESESTCron: "cron(40 17 * * ? *)"
+      BillingResponseExportCICron: "cron(0 17 * * ? *)"
+      BillingResponseExportCIESTCron: "cron(0 18 * * ? *)"
+      BillingResponseExportRESCron: "cron(10 17 * * ? *)"
+      BillingResponseExportRESESTCron: "cron(10 18 * * ? *)"
+      BillingResponseContCICron: "cron(0 22 * * ? *)"
+      BillingResponseContCIESTCron: "cron(0 23 * * ? *)"
+      BillingResponseContRESCron: "cron(15 22 * * ? *)"
+      BillingResponseContRESESTCron: "cron(15 23 * * ? *)"
+      BillingResponseExportContCICron: "cron(40 22 * * ? *)"
+      BillingResponseExportContCIESTCron: "cron(40 23 * * ? *)"
+      BillingResponseExportContRESCron: "cron(50 22 * * ? *)"
+      BillingResponseExportContRESESTCron: "cron(50 23 * * ? *)"
+      BillingReqCleanupCron: "cron(0 14 * * ? *)"
+      BillingReqCleanupESTCron: "cron(0 15 * * ? *)"
+      ReadingPurgeCron: "cron(30 00 * * ? *)"
+      ReadingPurgeESTCron: "cron(30 01 * * ? *)"
+    "485449107334":
+      VPCShortName: FPLQA
+      VPCShortNameLower: fplqa
+      RDSDatabaseName: mdmq
+      Epbucketname: 2epv-fp197-mdm-fplqa-s3
+      APIVPCEndpoint: vpce-01b27ccc8e37f8855
+      SFTPHostName: "b2bqa-int.nee.com"
+      SESDomain: "mdm-app@mdm.fplqa.com"
+      WebAppURL: "https://mdm-fplqa.fpl.com"
+      CognitoCallBackURL: "https://mdm-fplqa.fpl.com/login"
+      WAFID: "arn:aws:wafv2:us-east-1:485449107334:global/webacl/FMManagedWebACLV2WAFv2-Policy_For_QA_Domains1612302869538/10c46834-d896-4f7e-a6e2-4fd3a0f055f0"
+      RDSProxyEndpoint: "aws-fqv-fp197-mdm-rds-proxy.proxy-clfn2h31qwxn.us-east-1.rds.amazonaws.com"
+      SNOWSNSTopic: "arn:aws:sns:us-east-1:485449107334:NE789-IncidentTicketProd"
+      SupportDL: "dl-csit-mdm-support-alerts-test@nexteraenergy.com"
+      BusinessDL: "DL-CSIT-MDM-BUSINESS-ALERTS-TEST@nexteraenergy.com"
+      SNOWDescriptionSEV3: "APP=MDM arsRequired=0 arsSeverity=SEV3 arsAutoTag=L2_AMS_FPLS_COG emailRequired=1 emailSubject=Tivoli notification emailAddress=DL-csit-mdm-support-alerts"
+      SNOWDescriptionSEV4: "APP=MDM arsRequired=0 arsSeverity=SEV4 arsAutoTag=L2_AMS_FPLS_COG emailRequired=1 emailSubject=Tivoli notification emailAddress=DL-csit-mdm-support-alerts"
+      BillImpAlarmEDTCron: "cron(0 10 * * ? *)"
+      BillImpAlarmESTCron: "cron(0 11 * * ? *)"
+      DemandResetCompareCron: "cron(15 17 * * ? *)"
+      DemandResetCompareESTCron: "cron(15 18 * * ? *)"
+      DemandResetResponseCron: "cron(30 13 * * ? *)"
+      DemandResetResponseESTCron: "cron(30 14 * * ? *)"
+      DemandResetRequestCron: "cron(0 10 * * ? *)"
+      DemandResetRequestESTCron: "cron(0 11 * * ? *)"
+      CDPMissingDataNotifCron: "cron(15 14 * * ? *)"
+      CDPMissingDataNotifESTCron: "cron(15 15 * * ? *)"
+      CDPProjVSActCron: "cron(20 17 * * ? *)"
+      CDPProjVSActESTCron: "cron(20 18 * * ? *)"
+      CDPNoActionCron: "cron(40 17 * * ? *)"
+      CDPNoActionESTCron: "cron(40 18 * * ? *)"
+      BillingResponseCICron: "cron(30 16 * * ? *)"
+      BillingResponseCIESTCron: "cron(30 17 * * ? *)"
+      BillingResponseRESCron: "cron(45 16 * * ? *)"
+      BillingResponseRESESTCron: "cron(45 17 * * ? *)"
+      BillingResponseExportCICron: "cron(10 18 * * ? *)"
+      BillingResponseExportCIESTCron: "cron(10 19 * * ? *)"
+      BillingResponseExportRESCron: "cron(20 18 * * ? *)"
+      BillingResponseExportRESESTCron: "cron(20 19 * * ? *)"
+      BillingResponseContCICron: "cron(0 22 * * ? *)"
+      BillingResponseContCIESTCron: "cron(0 23 * * ? *)"
+      BillingResponseContRESCron: "cron(45 22 * * ? *)"
+      BillingResponseContRESESTCron: "cron(45 23 * * ? *)"
+      BillingResponseExportContCICron: "cron(40 23 * * ? *)"
+      BillingResponseExportContCIESTCron: "cron(40 00 * * ? *)"
+      BillingResponseExportContRESCron: "cron(50 23 * * ? *)"
+      BillingResponseExportContRESESTCron: "cron(50 00 * * ? *)"
+      BillingReqCleanupCron: "cron(0 14 * * ? *)"
+      BillingReqCleanupESTCron: "cron(0 15 * * ? *)"
+      ReadingPurgeCron: "cron(30 00 * * ? *)"
+      ReadingPurgeESTCron: "cron(30 01 * * ? *)"
+    "430004966399":
+      VPCShortName: FPLProd
+      VPCShortNameLower: fplprod
+      RDSDatabaseName: mdmp
+      Epbucketname: 2epv-fp197-mdm-fplprod-s3
+      APIVPCEndpoint: vpce-064d071a4259fe93d
+      SFTPHostName: "b2b-int.nee.com"
+      SESDomain: "mdm-app@mdm.fpl.com"
+      WebAppURL: "https://mdm-fplprod.fpl.com"
+      CognitoCallBackURL: "https://mdm-fplprod.fpl.com/login"
+      WAFID: "arn:aws:wafv2:us-east-1:430004966399:global/webacl/FMManagedWebACLV2WAFv2-Policy_For_Default_Use_COUNT1620337509128/44f6221a-e569-4d6e-baeb-a8f8cc8627fb"
+      RDSProxyEndpoint: "aws-fpv-fp197-mdm-rds-proxy.proxy-cgqep0gwcrlg.us-east-1.rds.amazonaws.com"
+      SNOWSNSTopic: "arn:aws:sns:us-east-1:430004966399:NE789-IncidentTicketProd"
+      SupportDL: "DL-csit-mdm-support-alerts@nexteraenergy.com"
+      BusinessDL: "DL-CSIT-MDM-BUSINESS-ALERTS@nexteraenergy.com"
+      SNOWDescriptionSEV3: "APP=MDM arsRequired=1 arsSeverity=SEV3 arsAutoTag=L2_AMS_FPLS_COG emailRequired=1 emailSubject=Tivoli notification emailAddress=DL-csit-mdm-support-alerts"
+      SNOWDescriptionSEV4: "APP=MDM arsRequired=1 arsSeverity=SEV4 arsAutoTag=L2_AMS_FPLS_COG emailRequired=1 emailSubject=Tivoli notification emailAddress=DL-csit-mdm-support-alerts"
+      BillImpAlarmEDTCron: "cron(0 10 * * ? *)"
+      BillImpAlarmESTCron: "cron(0 11 * * ? *)"
+      DemandResetCompareCron: "cron(15 17 * * ? *)"
+      DemandResetCompareESTCron: "cron(15 18 * * ? *)"
+      DemandResetResponseCron: "cron(30 13 * * ? *)"
+      DemandResetResponseESTCron: "cron(30 14 * * ? *)"
+      DemandResetRequestCron: "cron(0 10 * * ? *)"
+      DemandResetRequestESTCron: "cron(0 11 * * ? *)"
+      CDPMissingDataNotifCron: "cron(15 14 * * ? *)"
+      CDPMissingDataNotifESTCron: "cron(15 15 * * ? *)"
+      CDPProjVSActCron: "cron(20 17 * * ? *)"
+      CDPProjVSActESTCron: "cron(20 18 * * ? *)"
+      CDPNoActionCron: "cron(40 17 * * ? *)"
+      CDPNoActionESTCron: "cron(40 18 * * ? *)"
+      BillingResponseCICron: "cron(30 16 * * ? *)"
+      BillingResponseCIESTCron: "cron(30 17 * * ? *)"
+      BillingResponseRESCron: "cron(0 17 * * ? *)"
+      BillingResponseRESESTCron: "cron(0 18 * * ? *)"
+      BillingResponseExportCICron: "cron(10 18 * * ? *)"
+      BillingResponseExportCIESTCron: "cron(10 19 * * ? *)"
+      BillingResponseExportRESCron: "cron(20 18 * * ? *)"
+      BillingResponseExportRESESTCron: "cron(20 19 * * ? *)"
+      BillingResponseContCICron: "cron(0 22 * * ? *)"
+      BillingResponseContCIESTCron: "cron(0 23 * * ? *)"
+      BillingResponseContRESCron: "cron(45 22 * * ? *)"
+      BillingResponseContRESESTCron: "cron(45 23 * * ? *)"
+      BillingResponseExportContCICron: "cron(40 23 * * ? *)"
+      BillingResponseExportContCIESTCron: "cron(40 00 * * ? *)"
+      BillingResponseExportContRESCron: "cron(50 23 * * ? *)"
+      BillingResponseExportContRESESTCron: "cron(50 00 * * ? *)"
+      BillingReqCleanupCron: "cron(0 14 * * ? *)"
+      BillingReqCleanupESTCron: "cron(0 15 * * ? *)"
+      ReadingPurgeCron: "cron(30 00 * * ? *)"
+      ReadingPurgeESTCron: "cron(30 01 * * ? *)"
+    "202055847252":
+      VPCShortName: FPLDR
+      VPCShortNameLower: fpldr
+
+Globals:
+  Function:
+    Runtime: nodejs14.x
+    MemorySize: 5120
+    Timeout: 900
+    Environment:
+      Variables:
+        aws_console: true
+        secret_name:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-RDS-Secret
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        aws_account: !Ref AWS::AccountId
+        rds_proxy_host: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", RDSProxyEndpoint]
+        rds_proxy_port: !Ref RDSProxyPort
+        database: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", RDSDatabaseName]
+        http_proxy: "http://gopzen.fpl.com:10262"
+        https_proxy: "http://gopzen.fpl.com:10262"
+        no_proxy: "*.fpl.com,*.neeaws.local"
+        web_app_url: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", WebAppURL]
+        from: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SESDomain]
+    EventInvokeConfig:
+      MaximumRetryAttempts: 0
+    Tags:
+      AppCode: !Sub ${AppCode}
+      AppName: !Sub ${AppName}
+    VpcConfig:
+      SecurityGroupIds:
+        - Fn::ImportValue:
+            !Join ['-',[ 'SG', !FindInMap [AccountIDMap, !Ref "AWS::AccountId", VPCShortName], 'L1SG' ] ]
+        - Fn::ImportValue:
+            !Join ['-', [ 'SG', !FindInMap [AccountIDMap, !Ref "AWS::AccountId", VPCShortName], 'L3SGDBPostGresOLTPandDSS' ] ]
+        - Fn::ImportValue: !Sub "${AppCode}-Lambda-L4-SG"
+      SubnetIds:
+        - Fn::ImportValue:
+            !Join ['-',[ 'VPC', !FindInMap [AccountIDMap, !Ref "AWS::AccountId", VPCShortName], 'A', 'App', 'SUBNET' ] ]
+        - Fn::ImportValue:
+            !Join ['-',[ 'VPC', !FindInMap [AccountIDMap, !Ref "AWS::AccountId", VPCShortName], 'B', 'App', 'SUBNET' ] ]
+        - Fn::ImportValue:
+            !Join ['-',[ 'VPC', !FindInMap [AccountIDMap, !Ref "AWS::AccountId", VPCShortName], 'C', 'App', 'SUBNET' ] ]
+
+Resources:
+  BackEndBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-s3
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      NotificationConfiguration: 
+        QueueConfigurations:
+          - Event: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: Billing/Response/Incoming/
+                  - Name: suffix
+                    Value: .txt
+            Queue: !GetAtt SFTPServiceSQS.Arn
+          - Event: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: SFTP-EDI-Server/Incoming/
+            Queue: !GetAtt SFTPServiceSQS.Arn
+          - Event: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: Reading/Incoming/mdm/cis_recon/
+                  - Name: suffix
+                    Value: .gz
+            Queue: !GetAtt SFTPServiceSQS.Arn
+      Tags:
+        - Key: AppCode
+          Value: !Sub ${AppCode}
+        - Key: AppName
+          Value: !Sub ${AppName}
+  FrontEndBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-ui-s3
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      Tags:
+        - Key: AppCode
+          Value: !Sub ${AppCode}
+        - Key: AppName
+          Value: !Sub ${AppName}
+  ReadingImportLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-ReadingImport-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer    
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      ReservedConcurrentExecutions: 1
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: reading_import.zip
+      Events:
+        ReadingImportS3Event1:
+          Type: S3
+          Properties:
+            Bucket: !Ref BackEndBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: Reading/Incoming/reads/register/mdm/com/
+                  - Name: suffix
+                    Value: ".csv"
+        ReadingImportS3Event2:
+          Type: S3
+          Properties:
+            Bucket: !Ref BackEndBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: Reading/Incoming/reads/register/mdm/res/
+                  - Name: suffix
+                    Value: ".csv" 
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: Lambda
+            Destination: !GetAtt EmailAlertLambda.Arn
+  ReadingImportAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-ReadingImport-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV3]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-ReadingImport-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  BillingImportLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingRequestImport-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionUtilsLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: billing_request_import.zip
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: Lambda
+            Destination: !GetAtt EmailAlertLambda.Arn
+  BillingImportErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingRequestImportError-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV3]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingRequestImport-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  BillingImportAlarmFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingRequestImport-Alarm-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionCloudWatchAlarmLayer
+        - !Ref LambdaFunctionMailLayer
+        - !Ref LambdaFunctionUtilsLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: BillingRequestImportAlarm.zip
+      Environment:
+        Variables:
+          to: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SupportDL]
+      Events:
+        BillImpAlarmEDT:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillImpAlarmEDTCron]
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillImportAlarmEDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillImportAlarmEDT-LF-Event'
+            Enabled: False
+        BillImpAlarmEST:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillImpAlarmESTCron]
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillImportAlarmEST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillImportAlarmEST-LF-Event'
+            Enabled: True
+  BillingImportAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingRequestImport-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV3]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingRequestImport-Alarm-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  LambdaFunctionDatabaseLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: Database Layer
+      LayerName: !Join 
+        - '-'
+        - - !Join 
+            - ''
+            - - '2'
+              - !ImportValue Account-Global-AccountCodeLower
+              - !ImportValue 
+                'Fn::Join':
+                  - '-'
+                  - - Account-Global-RegionCodeLower
+                    - !Ref 'AWS::Region'
+          - !Ref AppCodeLower
+          - !Ref AppName
+          - DatabaseLayer
+      ContentUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: DatabaseLayer/nodejs.zip
+      CompatibleRuntimes:
+        - nodejs14.x
+  LambdaFunctionSFTPLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: SFTP layer
+      LayerName: !Join 
+        - '-'
+        - - !Join 
+            - ''
+            - - '2'
+              - !ImportValue Account-Global-AccountCodeLower
+              - !ImportValue 
+                'Fn::Join':
+                  - '-'
+                  - - Account-Global-RegionCodeLower
+                    - !Ref 'AWS::Region'
+          - !Ref AppCodeLower
+          - !Ref AppName
+          - SFTPLayer
+      ContentUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: SFTPLayer/nodejs.zip
+      CompatibleRuntimes:
+        - nodejs14.x
+  LambdaFunctionMailLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: Mail layer
+      LayerName: !Join 
+        - '-'
+        - - !Join 
+            - ''
+            - - '2'
+              - !ImportValue Account-Global-AccountCodeLower
+              - !ImportValue 
+                'Fn::Join':
+                  - '-'
+                  - - Account-Global-RegionCodeLower
+                    - !Ref 'AWS::Region'
+          - !Ref AppCodeLower
+          - !Ref AppName
+          - MailLayer
+      ContentUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: MailLayer/nodejs.zip
+      CompatibleRuntimes:
+        - nodejs14.x
+  LambdaFunctionCloudWatchAlarmLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: CloudWatch Alarm layer
+      LayerName: !Join 
+        - '-'
+        - - !Join 
+            - ''
+            - - '2'
+              - !ImportValue Account-Global-AccountCodeLower
+              - !ImportValue 
+                'Fn::Join':
+                  - '-'
+                  - - Account-Global-RegionCodeLower
+                    - !Ref 'AWS::Region'
+          - !Ref AppCodeLower
+          - !Ref AppName
+          - CloudWatchAlarmLayer
+      ContentUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: CloudWatchAlarmLayer/nodejs.zip
+      CompatibleRuntimes:
+        - nodejs14.x
+  LambdaFunctionUtilsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: Utils layer
+      LayerName: !Join 
+        - '-'
+        - - !Join 
+            - ''
+            - - '2'
+              - !ImportValue Account-Global-AccountCodeLower
+              - !ImportValue 
+                'Fn::Join':
+                  - '-'
+                  - - Account-Global-RegionCodeLower
+                    - !Ref 'AWS::Region'
+          - !Ref AppCodeLower
+          - !Ref AppName
+          - UtilsLayer
+      ContentUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: UtilsLayer/nodejs.zip
+      CompatibleRuntimes:
+        - nodejs14.x
+  SFTPServiceSQS:
+    Type: AWS::SQS::Queue
+    Properties: 
+      DelaySeconds: 0
+      MaximumMessageSize: 262144
+      MessageRetentionPeriod: 3600
+      QueueName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-SQS-${AppCodeLower}-${AppName}-SFTPServiceQueue
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      ReceiveMessageWaitTimeSeconds: 0
+      Tags:
+        - Key: AppCode
+          Value: !Sub ${AppCode}
+        - Key: AppName
+          Value: !Sub ${AppName}
+      VisibilityTimeout: 600
+  QueuePolicy:
+    Type: 'AWS::SQS::QueuePolicy'
+    DependsOn:
+      - SFTPServiceSQS
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: 
+              Service: "s3.amazonaws.com"
+            Action:
+              - "SQS:SendMessage"
+              - "SQS:ReceiveMessage"
+            Resource: !GetAtt SFTPServiceSQS.Arn
+            Condition:
+              ArnLike:
+                aws:SourceArn: !GetAtt BackEndBucket.Arn
+      Queues:
+        - !Ref SFTPServiceSQS
+  ReadingServiceGetLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-RegisterRead-GET-API-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: register_read_get_api.zip
+      Events:
+        GetStationsAPI:
+          Type: Api
+          Properties:
+            Path: /register-read-retrieve
+            Method: post
+            RestApiId: !Ref ReadingServiceAPI
+  ReadingServiceEditLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-RegisterRead-EDIT-API-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: register_read_edit_api.zip
+      Events:
+        GetStationsAPI:
+          Type: Api
+          Properties:
+            Path: /register-read-insert
+            Method: post
+            RestApiId: !Ref ReadingServiceAPI
+  ReadingImportStatisticsLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-ReadingImportStatistics-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: reading_import_statistics.zip
+      Events:
+        GetStationsAPI:
+          Type: Api
+          Properties:
+            Path: /billing-stats-api
+            Method: post
+            RestApiId: !Ref ReadingServiceAPI
+  BillingResponseExportContingency:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseExport-Contingency-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionUtilsLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: Billing_ResponseExport_Contingency.zip
+      Environment:
+        Variables:
+          bucket_name: 
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-s3
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Events:
+        ContCISchedule:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillingResponseExportContCICron]
+            Input: '{"requestType": "CI"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseExport-Cont-CI-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillingResponseExport-Cont-CI-EDT-LF-Event'
+            Enabled: False
+        ContCIScheduleEST:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillingResponseExportContCIESTCron]
+            Input: '{"requestType": "CI"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseExport-Cont-CI-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillingResponseExport-Cont-CI-EST-LF-Event'
+            Enabled: True
+        ContRESSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillingResponseExportContRESCron]
+            Input: '{"requestType": "RES"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseExport-Cont-RES-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillingResponseExport-Cont-RES-EDT-LF-Event'
+            Enabled: False
+        ContRESScheduleEST:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillingResponseExportContRESESTCron]
+            Input: '{"requestType": "RES"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseExport-Cont-RES-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillingResponseExport-Cont-RES-EST-LF-Event'
+            Enabled: True
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: Lambda
+            Destination: !GetAtt EmailAlertLambda.Arn
+  BillResponseExportContAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseExportCont-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV3]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseExport-Contingency-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  BillingResponseExportOnCycle:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseExport-OnCycle-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionUtilsLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: Billing_ResponseExport_OnCycle.zip
+      Environment:
+        Variables:
+          bucket_name: 
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-s3
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Events:
+        CISchedule:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillingResponseExportCICron]
+            Input: '{"requestType": "CI"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseExport-OnCycle-CI-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillingResponseExport-OnCycle-CI-EDT-LF-Event'
+            Enabled: False
+        CIScheduleEST:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillingResponseExportCIESTCron]
+            Input: '{"requestType": "CI"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseExport-OnCycle-CI-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillingResponseExport-OnCycle-CI-EST-LF-Event'
+            Enabled: True
+        RESSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillingResponseExportRESCron]
+            Input: '{"requestType": "RES"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseExport-OnCycle-RES-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillingResponseExport-OnCycle-RES-EDT-LF-Event'
+            Enabled: False
+        RESScheduleEST:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillingResponseExportRESESTCron]
+            Input: '{"requestType": "RES"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseExport-OnCycle-RES-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillingResponseExport-OnCycle-RES-EST-LF-Event'
+            Enabled: True
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: Lambda
+            Destination: !GetAtt EmailAlertLambda.Arn
+  BillResponseExportAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseExportOnCycle-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV3]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseExport-OnCycle-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  BillingResponseNotification:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseNotification-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionMailLayer
+        - !Ref LambdaFunctionUtilsLayer
+        - !Ref LambdaFunctionCloudWatchAlarmLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: BillingResponseNotification.zip
+      Environment:
+        Variables:
+          to: !Join [',',[!FindInMap [AccountIDMap, !Ref "AWS::AccountId", SupportDL], !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BusinessDL] ] ]
+          environment: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", VPCShortName]
+  BillingResponseNotificationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseNotification-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV3]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseNotification-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  SFTPEDIServer:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-SFTP-EDI-Server-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionSFTPLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: SFTP_EDI_Server.zip
+      Environment:
+        Variables:
+          sftp_secret_name: 
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-EDI-SFTP-Secret
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+          sftp_host_name: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SFTPHostName]
+          sftp_port: !Ref SFTPPort
+          bucket_name: 
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-s3
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: Lambda
+            Destination: !GetAtt EmailAlertLambda.Arn
+  SFTPEDIServerAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-SFTPEDIServer-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV3]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-SFTP-EDI-Server-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  EmailAlertLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-EmailAlert-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionMailLayer
+        - !Ref LambdaFunctionCloudWatchAlarmLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: EmailAlert.zip
+      Environment:
+        Variables:
+          to: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SupportDL]
+  EmailAlertAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-EmailAlert-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV4]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-EmailAlert-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  MeterFailureProcessGETResetReadsLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-MeterFailureProcess-GET-Reset-Reads-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: meter_failure_process_get_reset_reads.zip
+      Events:
+        GetStationsAPI:
+          Type: Api
+          Properties:
+            Path: /fail-meter-get-reads
+            Method: post
+            RestApiId: !Ref ReadingServiceAPI
+  MeterFailProcessUserActionResetReadsLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-Meter-Fail-Process-User-Action-Reset-Reads-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionMailLayer
+        - !Ref LambdaFunctionUtilsLayer
+        - !Ref LambdaFunctionCloudWatchAlarmLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: meter_fail_process_user-action-reset-reads.zip
+      Environment:
+        Variables:
+          to: !Join [',',[!FindInMap [AccountIDMap, !Ref "AWS::AccountId", SupportDL], !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BusinessDL] ] ]
+      Events:
+        GetStationsAPI:
+          Type: Api
+          Properties:
+            Path: /fail-meter-read-action
+            Method: post
+            RestApiId: !Ref ReadingServiceAPI
+  MeterFailUserActionAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-MeterFail-UserAction-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV4]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-Meter-Fail-Process-User-Action-Reset-Reads-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  MeterFailureProcessIdentifyResetReads:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-MeterFailureProcess-Identify-Reset-Reads-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionMailLayer
+        - !Ref LambdaFunctionUtilsLayer
+        - !Ref LambdaFunctionCloudWatchAlarmLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: MeterFailureProcess_Identify_Reset_Reads.zip
+      Environment:
+        Variables:
+          to: !Join [',',[!FindInMap [AccountIDMap, !Ref "AWS::AccountId", SupportDL], !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BusinessDL] ] ]
+      Events:
+        MFIdSch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(2 16 * * ? *)'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-MeterFail-Identify-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for MeterFail-Identify-EDT-LF-Event'
+            Enabled: False
+        MFIdESTSch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(2 17 * * ? *)'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-MeterFail-Identify-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for MeterFail-Identify-EST-LF-Event'
+            Enabled: True
+  MeterFailIdentifyReadAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-MeterFail-IdentifyRead-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV4]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-MeterFailureProcess-Identify-Reset-Reads-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  MeterFailProcessUpdateResetReads:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-Meter-Fail-Process-Update-Reset-Reads-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionMailLayer
+        - !Ref LambdaFunctionCloudWatchAlarmLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: MeterFail_Process_Update_Reset_Reads.zip
+      Environment:
+        Variables:
+          to: !Join [',',[!FindInMap [AccountIDMap, !Ref "AWS::AccountId", SupportDL], !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BusinessDL] ] ]
+      Events:
+        MFUpSch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(15 16 * * ? *)'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-MeterFail-Update-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for MeterFail-Update-EDT-LF-Event'
+            Enabled: False
+        MFUpESTSch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(15 17 * * ? *)'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-MeterFail-Update-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for MeterFail-Update-EST-LF-Event'
+            Enabled: True
+  UIQCISWritingExport:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-UIQ-CIS-WritingExport-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: UIQ_CIS_WritingExport.zip
+  CalPreviousSeasonReadingsCITOD:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CalPreviousSeasonReadings-CI-TOD-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: CalPreviousSeasonReadings_CI_TOD.zip
+      Events:
+        PrevSeas0DaySch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(20 16 * * ? *)'
+            Input: '{"aPrevDay": "0"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-PrevSeasonCalc-CurrentDay-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for CalPreviousSeasonReadings-CI-TOD-EDT-LF-Event'
+            Enabled: False
+        PrevSeas0DayESTSch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(20 17 * * ? *)'
+            Input: '{"aPrevDay": "0"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-PrevSeasonCalc-CurrentDay-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for CalPreviousSeasonReadings-CI-TOD-EST-LF-Event'
+            Enabled: True
+        PrevSeas1DaySch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(0 20 * * ? *)'
+            Input: '{"aPrevDay": "1"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-PrevSeasonCalc-1Day-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for PrevSeasonCalc-1Day-EDT-LF-Event'
+            Enabled: False
+        PrevSeas1DayESTSch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(0 21 * * ? *)'
+            Input: '{"aPrevDay": "1"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-PrevSeasonCalc-1Day-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for PrevSeasonCalc-1Day-EST-LF-Event'
+            Enabled: True
+        PrevSeas2DaySch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(5 20 * * ? *)'
+            Input: '{"aPrevDay": "2"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-PrevSeasonCalc-2Day-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for PrevSeasonCalc-2Day-EDT-LF-Event'
+            Enabled: False
+        PrevSeas2DayESTSch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(5 21 * * ? *)'
+            Input: '{"aPrevDay": "2"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-PrevSeasonCalc-2Day-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for PrevSeasonCalc-2Day-EST-LF-Event'
+            Enabled: True
+        PrevSeas3DaySch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(10 20 * * ? *)'
+            Input: '{"aPrevDay": "3"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-PrevSeasonCalc-3Day-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for PrevSeasonCalc-3Day-EDT-LF-Event'
+            Enabled: False
+        PrevSeas3DayESTSch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(10 21 * * ? *)'
+            Input: '{"aPrevDay": "3"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-PrevSeasonCalc-3Day-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for PrevSeasonCalc-3Day-EST-LF-Event'
+            Enabled: True
+        PrevSeas4DaySch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(15 20 * * ? *)'
+            Input: '{"aPrevDay": "4"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-PrevSeasonCalc-4Day-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for PrevSeasonCalc-4Day-EDT-LF-Event'
+            Enabled: False
+        PrevSeas4DayESTSch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(15 21 * * ? *)'
+            Input: '{"aPrevDay": "4"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-PrevSeasonCalc-4Day-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for PrevSeasonCalc-4Day-EST-LF-Event'
+            Enabled: True
+        PrevSeas5DaySch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(20 20 * * ? *)'
+            Input: '{"aPrevDay": "5"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-PrevSeasonCalc-5Day-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for PrevSeasonCalc-5Day-EDT-LF-Event'
+            Enabled: False
+        PrevSeas5DayESTSch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(20 21 * * ? *)'
+            Input: '{"aPrevDay": "5"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-PrevSeasonCalc-5Day-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for PrevSeasonCalc-5Day-EST-LF-Event'
+            Enabled: True
+        PrevSeas6DaySch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(25 20 * * ? *)'
+            Input: '{"aPrevDay": "6"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-PrevSeasonCalc-6Day-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for PrevSeasonCalc-6Day-EDT-LF-Event'
+            Enabled: False
+        PrevSeas6DayESTSch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(25 21 * * ? *)'
+            Input: '{"aPrevDay": "6"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-PrevSeasonCalc-6Day-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for PrevSeasonCalc-6Day-EST-LF-Event'
+            Enabled: True
+        PrevSeas7DaySch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(30 20 * * ? *)'
+            Input: '{"aPrevDay": "7"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-PrevSeasonCalc-7Day-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for PrevSeasonCalc-7Day-EDT-LF-Event'
+            Enabled: False
+        PrevSeas7DayESTSch:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(30 21 * * ? *)'
+            Input: '{"aPrevDay": "7"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-PrevSeasonCalc-7Day-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for PrevSeasonCalc-7Day-EST-LF-Event'
+            Enabled: True 
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: Lambda
+            Destination: !GetAtt EmailAlertLambda.Arn
+  CalPreviousSeasonReadingsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CalPreviousSeasonReadings-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV3]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CalPreviousSeasonReadings-CI-TOD-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  CISTODMeterInsert:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CIS-TOD-Meter-Insert-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: CIS_TOD_Meter_Insert.zip
+  TrainCycleDataInsert:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-TrainCycleDataInsert-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: TrainCycleDataInsert.zip
+  ContingencyTrainCycleDataInsert:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-ContingencyTrainCycleDataInsert-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: ContingencyTrainCycleDataInsert.zip
+  BillingResponseRESELE:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponse-RES-ELE-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: BillingResponse_RES_ELE.zip
+      Events:
+        BillingResponseRESSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillingResponseRESCron]
+            Input: '{"type": "ONCYCLE"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponse-RES-ELE-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillingResponse-RES-ELE-EDT-LF-Event'
+            Enabled: False
+        BillingResponseRESESTSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillingResponseRESESTCron]
+            Input: '{"type": "ONCYCLE"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponse-RES-ELE-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillingResponse-RES-ELE-EST-LF-Event'
+            Enabled: True
+        ContRESSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillingResponseContRESCron]
+            Input: '{"type": "CONTINGENCY"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseCont-RES-ELE-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillingResponseCont-RES-ELE-EDT-LF-Event'
+            Enabled: False
+        ContRESScheduleEST:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillingResponseContRESESTCron]
+            Input: '{"type": "CONTINGENCY"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseCont-RES-ELE-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillingResponseCont-RES-ELE-EST-LF-Event'
+            Enabled: True
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: Lambda
+            Destination: !GetAtt EmailAlertLambda.Arn
+  BillingResponseRESELEAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseRESELE-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV3]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponse-RES-ELE-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  BillingResponseCI:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponse-CI-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: BillingResponse_CI.zip
+      Events:
+        BillResponseCISchedule:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillingResponseCICron]
+            Input: '{"type": "ONCYCLE"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponse-CI-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillingResponse-CI-EDT-LF-Event'
+            Enabled: False
+        BillResponseCIESTSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillingResponseCIESTCron]
+            Input: '{"type": "ONCYCLE"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponse-CI-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillingResponse-CI-EST-LF-Event'
+            Enabled: True
+        ContCISchedule:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillingResponseContCICron]
+            Input: '{"type": "CONTINGENCY"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseCont-CI-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillingResponseCont-CI-EDT-LF-Event'
+            Enabled: False
+        ContCIScheduleEST:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillingResponseContCIESTCron]
+            Input: '{"type": "CONTINGENCY"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseCont-CI-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillingResponseCont-CI-EST-LF-Event'
+            Enabled: True
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: Lambda
+            Destination: !GetAtt EmailAlertLambda.Arn
+  BillingResponseCIAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponseCI-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV3]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingResponse-CI-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  SSNBillingReads:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-SSNBillingReads-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: SSNBillingReads.zip
+      Events:
+        SSNBillReadSchA:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(45 17 * * ? *)'
+            Input: '{"scheduleType": "A"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-SSNBillingReadsA-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for SSNBillingReadsA-EDT-LF-Event'
+            Enabled: False
+        SSNBillReadESTSchA:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(45 18 * * ? *)'
+            Input: '{"scheduleType": "A"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-SSNBillingReadsA-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for SSNBillingReadsA-EST-LF-Event'
+            Enabled: True
+        SSNBillReadSchB:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(15 4 * * ? *)'
+            Input: '{"scheduleType": "B"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-SSNBillingReadsB-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for SSNBillingReadsB-EDT-LF-Event'
+            Enabled: False
+        SSNBillReadESTSchB:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(15 5 * * ? *)'
+            Input: '{"scheduleType": "B"}'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-SSNBillingReadsB-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for SSNBillingReadsB-EST-LF-Event'
+            Enabled: True
+      Environment:
+        Variables:
+          bucket_name: 
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-s3
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: Lambda
+            Destination: !GetAtt EmailAlertLambda.Arn
+  SSNBillingReadsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-SSNBillingReads-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV3]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-SSNBillingReads-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  CycleDayProjections:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CycleDayProjections-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionUtilsLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: CycleDayProjections.zip
+      Events:
+        CycleDayProjAPI:
+          Type: Api
+          Properties:
+            Path: /cycle-day-projections
+            Method: post
+            RestApiId: !Ref ReadingServiceAPI
+  CycleDayProjectionsGet:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CycleDayProjections-Get-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: CycleDayProjections_Get.zip
+      Events:
+        CycleDayProjGetAPI:
+          Type: Api
+          Properties:
+            Path: /cycle-day-projections-get
+            Method: post
+            RestApiId: !Ref ReadingServiceAPI
+  CycleDayProjectionsMissingDataNotification:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CycleDayProjections-MissingDataNotification-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionMailLayer
+        - !Ref LambdaFunctionCloudWatchAlarmLayer
+        - !Ref LambdaFunctionUtilsLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: CycleDayProjections_MissingDataNotification.zip
+      Environment:
+        Variables:
+          to: !Join [',',[!FindInMap [AccountIDMap, !Ref "AWS::AccountId", SupportDL], !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BusinessDL] ] ]
+      Events:
+        CDPMDSch:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", CDPMissingDataNotifCron]
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CDPMissDataEDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for CDPMissingDataNotifEDT-LF-Event'
+            Enabled: False
+        CDPESTSch:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", CDPMissingDataNotifESTCron]
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CDPMissDataEST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for CDPMissingDataNotifEST-LF-Event'
+            Enabled: True
+  CDPMissingDataAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CDPMissingDataAlarm-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV4]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CycleDayProjections-MissingDataNotification-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  CycleDayProjectionsProjectedVSActual:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CycleDayProjections-ProjectedVSActual-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionMailLayer
+        - !Ref LambdaFunctionUtilsLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: CycleDayProjections_ProjectedVSActual.zip
+      Environment:
+        Variables:
+          FPLTestExportBillingResponse: "YES"
+          to: !Join [',',[!FindInMap [AccountIDMap, !Ref "AWS::AccountId", SupportDL], !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BusinessDL] ] ]
+      Events:
+        ProjVsActEvent:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", CDPProjVSActCron]
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CDP-ProjectedVSActualEDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for CDP-ProjectedVSActualEDT-LF-Event'
+            Enabled: False
+        ProjVsActEST:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", CDPProjVSActESTCron]
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CDP-ProjectedVSActualEST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for CDP-ProjectedVSActualEST-LF-Event'
+            Enabled: True
+  CycleDayProjectionsGetBillingResults:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CycleDayProjections-GetBillingResults-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: CycleDayProjections_GetBillingResults.zip
+      Events:
+        CycleDayProjGetBillAPI:
+          Type: Api
+          Properties:
+            Path: /billing-metrics-get
+            Method: post
+            RestApiId: !Ref ReadingServiceAPI
+  CycleDayProjectionsAcceptReject:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CycleDayProjections-Accept-Reject-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionMailLayer
+        - !Ref LambdaFunctionCloudWatchAlarmLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: CycleDayProjections_AcceptReject.zip
+      Environment:
+        Variables:
+          to: !Join [',',[!FindInMap [AccountIDMap, !Ref "AWS::AccountId", SupportDL], !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BusinessDL] ] ]
+      Events:
+        CycleDayProjAccRejAPI:
+          Type: Api
+          Properties:
+            Path: /billing-export-user-action
+            Method: post
+            RestApiId: !Ref ReadingServiceAPI
+  CDPAcceptRejectAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CDPAcceptReject-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV4]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CycleDayProjections-Accept-Reject-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  CycleDayProjectionsNoActionAlarm:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CycleDayProjections-NoActionAlarm-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionMailLayer
+        - !Ref LambdaFunctionUtilsLayer
+        - !Ref LambdaFunctionCloudWatchAlarmLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: CycleDayProjections_NoActionAlarm.zip
+      Events:
+        ProjVsActEvent:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", CDPNoActionCron]
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CDP-NoActionAlarmEDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for CDP-NoActionAlarmEDT-LF-Event'
+            Enabled: False
+        ProjVsActESTEvent:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", CDPNoActionESTCron]
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CDP-NoActionAlarmEST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for CDP-NoActionAlarmEST-LF-Event'
+            Enabled: True
+      Environment:
+        Variables:
+          to: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SupportDL]
+  CDPANoActionAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CDPNoAction-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV4]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CycleDayProjections-NoActionAlarm-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  MeterReadingUploadFailureAlarm:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-MeterReadingUploadFailure-Alarm-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionMailLayer
+        - !Ref LambdaFunctionCloudWatchAlarmLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: MeterReadingUploadFailureAlarm.zip
+      Environment:
+        Variables:
+          to: !Join [',',[!FindInMap [AccountIDMap, !Ref "AWS::AccountId", SupportDL], !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BusinessDL] ] ]
+      Events:
+        MtrrRdgUpdFail:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(0 5/4 * * ? *)'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-MeterReadingUploadFailureAL-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for MeterRdUploadFail-EDT-LF-Event'
+            Enabled: False
+        MtrrRdgUpdFailEST:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(0 6/4 * * ? *)'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-MeterReadingUploadFailureAL-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for MeterRdUploadFail-EST-LF-Event'
+            Enabled: True
+  MeterReadingFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-MeterReadingUploadFailure-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV3]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-MeterReadingUploadFailure-Alarm-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  ExpectedVSReceivedReadingAlarm:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-ExpectedVSReceivedReading-Alarm-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionMailLayer
+        - !Ref LambdaFunctionUtilsLayer
+        - !Ref LambdaFunctionCloudWatchAlarmLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: ExpectedVSReceivedReadingAlarm.zip
+      Environment:
+        Variables:
+          to: !Join [',',[!FindInMap [AccountIDMap, !Ref "AWS::AccountId", SupportDL], !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BusinessDL] ] ]
+      Events:
+        ExpdVSRcedRd:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(0 14 * * ? *)'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-ExpectedVSReceivedReadingAL-EDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for ExpedVSRecdRdAL-EDT-LF-Event'
+            Enabled: False
+        ExpdVSRcedRdEST:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(0 15 * * ? *)'
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-ExpectedVSReceivedReadingAL-EST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for ExpedVSRecdRdAL-EST-LF-Event'
+            Enabled: True
+  ExpectedVSReceivedAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-ExpectedVSReceivedReading-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV3]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-ExpectedVSReceivedReading-Alarm-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  CutoverDate:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-CutoverDate-API-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: CutoverDateAPI.zip
+      Events:
+        CutoverDateAPI:
+          Type: Api
+          Properties:
+            Path: /get-cut-over-date
+            Method: post
+            RestApiId: !Ref ReadingServiceAPI
+  DemandReadRequest:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-DemandReadRequest-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionUtilsLayer
+        - !Ref LambdaFunctionMailLayer
+        - !Ref LambdaFunctionCloudWatchAlarmLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: DemandReadRequest.zip
+      Environment:
+        Variables:
+          bucket_name: 
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-s3
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+  DemandReadResponse:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-DemandReadResponse-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionUtilsLayer
+        - !Ref LambdaFunctionMailLayer
+        - !Ref LambdaFunctionCloudWatchAlarmLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: DemandReadResponse.zip
+      Events:
+        DemandReadResponseS3Event:
+          Type: S3
+          Properties:
+            Bucket: !Ref BackEndBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: CIS/DemandResetResponse/Incoming/
+                  - Name: suffix
+                    Value: ".txt"
+  DemandResetCompare:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-DemandResetCompare-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionUtilsLayer
+        - !Ref LambdaFunctionSFTPLayer
+        - !Ref LambdaFunctionMailLayer
+        - !Ref LambdaFunctionCloudWatchAlarmLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: DemandResetCompare.zip
+      Events:
+        DemandResetCompareSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", DemandResetCompareCron]
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-DemandResetCompareEDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for DemandResetCompareEDT-LF-Event'
+            Enabled: False
+        DemandResetCompareESTSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", DemandResetCompareESTCron]
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-DemandResetCompareEST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for DemandResetCompareEST-LF-Event'
+            Enabled: True
+      Environment:
+        Variables:
+          to: !Join [',',[!FindInMap [AccountIDMap, !Ref "AWS::AccountId", SupportDL], !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BusinessDL] ] ]
+          bucket_name: 
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-s3
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: Lambda
+            Destination: !GetAtt EmailAlertLambda.Arn
+  DemandResetCompareAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-DemandResetCompare-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV3]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-DemandResetCompare-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  DemandResetCompareAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-DemandResetCompare-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV4]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-DemandResetCompare-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  DemandResetResponse:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-DemandResetResponse-Alarm-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionUtilsLayer
+        - !Ref LambdaFunctionCloudWatchAlarmLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: DemandResetResponse.zip
+      Events:
+        DemandResetResSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", DemandResetResponseCron]
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-DemandResetResponseEDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for DemandResetResponseEDT-LF-Event'
+            Enabled: False
+        DemandResetResESTSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", DemandResetResponseESTCron]
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-DemandResetResponseEST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for DemandResetResponseEST-LF-Event'
+            Enabled: True
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: Lambda
+            Destination: !GetAtt EmailAlertLambda.Arn
+  DemandResetResponseAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-DemandResetResponse-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV3]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-DemandResetResponse-Alarm-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  DemandResetRequest:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-DemandResetRequest-Alarm-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionMailLayer
+        - !Ref LambdaFunctionCloudWatchAlarmLayer
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionUtilsLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: DemandResetRequest.zip
+      Environment:
+        Variables:
+          ep_bucket_name: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", Epbucketname]
+      Events:
+        DemandResetReqSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", DemandResetRequestCron]
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-DemandResetRequestEDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for DemandResetRequestEDT-LF-Event'
+            Enabled: False
+        DemandResetReqESTSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", DemandResetRequestESTCron]
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-DemandResetRequestEST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for DemandResetRequestEST-LF-Event'
+            Enabled: True
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: Lambda
+            Destination: !GetAtt EmailAlertLambda.Arn
+  DemandResetRequestAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-DemandResetRequest-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV3]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-DemandResetRequest-Alarm-LF 
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  UIQUpdate:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-UIQUpdate-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionUtilsLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: UIQUpdate.zip
+      Environment:
+        Variables:
+          bucket_name: 
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-s3
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+  FileTransferNotification:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-FileTransferNotification-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionUtilsLayer
+        - !Ref LambdaFunctionCloudWatchAlarmLayer
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionMailLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: FileTransferNotification.zip
+      Environment:
+        Variables:
+          bucket_name: 
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-s3
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+          to: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SupportDL]
+          environment: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", VPCShortName]
+  FileTransferAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-FileTransferNotification-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV3]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "AWS/Lambda"
+      MetricName: "FP197AlarmInvok"
+      Dimensions:
+        - Name: "FunctionName"
+          Value:
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-FileTransferNotification-LF
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Statistic: "SampleCount"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  BillingCalendarUpdateLF:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingCalendarUpdate-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionUtilsLayer
+        - !Ref LambdaFunctionCloudWatchAlarmLayer
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionMailLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: BillingCalendarUpdate.zip
+      Environment:
+        Variables:
+          bucket_name: 
+            Fn::Sub:
+              - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-s3
+              - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                Region:
+                  Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+          to: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SupportDL]
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: Lambda
+            Destination: !GetAtt EmailAlertLambda.Arn
+  BillingReqClnup:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingRequestCleanup-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionUtilsLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: BillingRequestCleanup.zip
+      Events:
+        BillingReqCleanupSch:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillingReqCleanupCron]
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingReqCleanupEDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillingReqCleanupEDT-LF-Event'
+            Enabled: False
+        BillingReqCleanupESTSch:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", BillingReqCleanupESTCron]
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-BillingReqCleanupEST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for BillingReqCleanupEST-LF-Event'
+            Enabled: True
+  ReadingPurge:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-ReadingPurge-LF
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Handler: index.handler
+      Layers:
+        - !Ref LambdaFunctionDatabaseLayer
+        - !Ref LambdaFunctionUtilsLayer
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      PackageType: Zip
+      CodeUri:
+        Bucket:
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        Key: ReadingPurge.zip
+      Events:
+        ReadingPurgeSch:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", ReadingPurgeCron]
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-ReadingPurgeEDT-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for ReadingPurgeEDT-LF-Event'
+            Enabled: False
+        ReadingPurgeESTSch:
+          Type: Schedule
+          Properties:
+            Schedule: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", ReadingPurgeESTCron]
+            Name:
+              Fn::Sub:
+                - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-ReadingPurgeEST-LF-Event
+                - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+                  Region:
+                    Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+            Description: 'Cron Schedule for ReadingPurgeEST-LF-Event'
+            Enabled: True
+  ReadingServiceAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name:
+        Fn::Sub:
+        - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-ReadingService-API
+        - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+          Region:
+            Fn::ImportValue:
+              Fn::Sub: Account-Global-RegionCodeLower-${AWS::Region}
+      OpenApiVersion: '2.0'
+      EndpointConfiguration:
+        Type: PRIVATE
+        VPCEndpointIds:
+          - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", APIVPCEndpoint]
+      StageName: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", VPCShortName]
+      Auth:
+        ResourcePolicy:
+          CustomStatements: [{
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "execute-api:Invoke",
+            "Resource": !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/*"
+            },
+            {
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "execute-api:InvalidateCache",
+            "Resource": !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/*"
+            },
+            {
+            "Effect": "Deny",
+            "Principal": "*",
+            "Action": "execute-api:Invoke",
+            "Resource": !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/*",
+            "Condition": {
+              "StringNotEquals": {
+                "aws:SourceVpce": !FindInMap [AccountIDMap, !Ref "AWS::AccountId", APIVPCEndpoint]
+                  }
+                }
+          }]
+      Tags:
+        AppCode: !Ref AppCode
+  SFTPLambdaSecret:
+    Type: 'AWS::SecretsManager::Secret'
+    Properties:
+      Name: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-EDI-SFTP-Secret
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Description: MDM Application SFTP Lambda Secret
+      SecretString: !Join
+        - ''
+        - - '{"Username":"'
+          - !Ref SFTPUsername
+          - '","Secret":"'
+          - !Ref SFTPPassword
+          - '"}'
+      Tags:
+        - Key: AppCode
+          Value: !Sub ${AppCode}
+        - Key: AppName
+          Value: !Sub ${AppName}
+  MDMCloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties: 
+      DistributionConfig: 
+        Aliases:
+          - !Join [ 
+              "", 
+              [ 
+                !Sub "${AppName}", 
+                "-",
+                !FindInMap [AccountIDMap, !Ref "AWS::AccountId", VPCShortNameLower],
+                ".fpl.com"
+              ] 
+            ]
+        CustomErrorResponses: 
+          - ErrorCachingMinTTL: 300
+            ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: "/index.html"
+          - ErrorCachingMinTTL: 300
+            ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: "/index.html"
+          - ErrorCachingMinTTL: 300
+            ErrorCode: 400
+            ResponseCode: 200
+            ResponsePagePath: "/index.html"
+        DefaultCacheBehavior: 
+          AllowedMethods:
+            - HEAD
+            - GET
+          CachedMethods:
+            - HEAD
+            - GET
+          Compress: false
+          DefaultTTL: 90
+          ForwardedValues:
+            Cookies:
+              Forward: none
+            QueryString: true
+          MaxTTL: 300
+          MinTTL: 60
+          TargetOriginId: !Ref FrontEndBucket
+          ViewerProtocolPolicy: redirect-to-https
+        DefaultRootObject: index.html
+        Enabled: True
+        HttpVersion: http1.1
+        IPV6Enabled: True
+        Origins: 
+          - ConnectionAttempts: 3
+            ConnectionTimeout: 10
+            DomainName:
+              !Join [
+                "",
+                [!Ref "FrontEndBucket", ".s3.amazonaws.com"],
+              ]
+            Id: !Ref FrontEndBucket
+            OriginPath: ""
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub >-
+                origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}
+        PriceClass: PriceClass_All
+        Restrictions:
+          GeoRestriction:
+            RestrictionType: none
+            Locations: []
+        ViewerCertificate:
+          AcmCertificateArn: !ImportValue wildcard-fpl
+          MinimumProtocolVersion: TLSv1
+          SslSupportMethod: sni-only
+        WebACLId: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", WAFID]
+      Tags:
+        - Key: AppCode
+          Value: !Sub ${AppCode}
+        - Key: AppName
+          Value: !Sub ${AppName}
+  CloudFrontOriginAccessIdentity:
+    Type: "AWS::CloudFront::CloudFrontOriginAccessIdentity"
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub "Access S3 bucket content only through CloudFront for ${AppCode}"
+  FrontEndS3BucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Metadata:
+      Comment: Bucket policy to allow cloudfront to access the data
+    Properties:
+      Bucket: !Ref FrontEndBucket
+      PolicyDocument:
+        Statement:
+          - Action:
+              - "s3:GetObject"
+            Effect: Allow
+            Principal:
+              CanonicalUser: !GetAtt
+                - CloudFrontOriginAccessIdentity
+                - S3CanonicalUserId
+            Resource:
+              - !Sub 'arn:aws:s3:::${FrontEndBucket}/*'
+  UserPool:
+    Type: 'AWS::Cognito::UserPool'
+    Properties:
+      UserPoolName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-USERPOOL
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+        UnusedAccountValidityDays: 7
+      MfaConfiguration: "OFF"
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+      UsernameConfiguration:
+        CaseSensitive: False          
+      UserPoolTags:
+        AppCode: !Ref AppCode
+        AppName: !Ref AppName
+  UserPoolClient:
+    Type: 'AWS::Cognito::UserPoolClient'
+    Properties:
+      ClientName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-USERPOOLCLIENT
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      GenerateSecret: false
+      UserPoolId: !Ref UserPool
+      RefreshTokenValidity: 30
+      AccessTokenValidity: 24
+      IdTokenValidity: 24
+      ExplicitAuthFlows:
+        - ALLOW_CUSTOM_AUTH
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+      AllowedOAuthFlowsUserPoolClient: true
+      CallbackURLs:
+        - http://localhost:3000/login
+        - !Join [ 
+          "", 
+          [ 
+            "https://", 
+            !GetAtt MDMCloudFrontDistribution.DomainName, 
+            "/login"
+          ] 
+        ]
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", CognitoCallBackURL] 
+      LogoutURLs:
+        - !Join [ 
+          "", 
+          [ 
+            "https://", 
+            !GetAtt MDMCloudFrontDistribution.DomainName, 
+            "/login"
+          ] 
+        ]
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", CognitoCallBackURL] 
+      AllowedOAuthFlows:
+        - code
+        - implicit
+      AllowedOAuthScopes:
+        - phone
+        - email
+        - openid
+        - profile
+        - aws.cognito.signin.user.admin
+      ReadAttributes:
+        - email
+        - given_name
+        - email_verified
+        - family_name
+        - profile
+      WriteAttributes:
+        - email
+        - given_name
+        - family_name
+        - profile 
+      SupportedIdentityProviders:
+        - ADFS-LOGIN
+  UserPoolIdentityProvider:
+    Type: AWS::Cognito::UserPoolIdentityProvider
+    Properties: 
+      AttributeMapping:
+        email: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'
+        Profile: 'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'
+        GivenName: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname'
+        FamilyName: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname'
+        Username: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'
+      ProviderDetails: 
+        MetadataURL: 'https://adfs40.nexteraenergy.com/FederationMetadata/2007-06/FederationMetadata.xml'
+      ProviderName: ADFS-LOGIN
+      ProviderType: SAML
+      UserPoolId: !Ref UserPool
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain:
+        !Join [ 
+          "-", 
+          [ 
+            !Sub "${AppName}", 
+            "portal", 
+            !FindInMap [AccountIDMap, !Ref "AWS::AccountId", VPCShortNameLower] 
+          ] 
+        ]
+      UserPoolId: !Ref UserPool

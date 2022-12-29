@@ -1,0 +1,132 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Serverless MDM Resources Stack
+
+Parameters:
+  AppCode:
+    Type: String
+    Default: FP197
+  AppCodeLower:
+    Type: String
+    Default: fp197
+  AppName:
+    Type: String
+    Default: mdm
+  TeamName:
+    Type: String
+    Default: read-army
+  Region:
+    Type: String
+    AllowedValues:
+      - us-east-1
+      - us-east-2
+    Default: us-east-1
+  Department:
+    Type: String
+    Default: "Customer Service IT"
+  OwnerContact:
+    Type: String
+    Default: "nicolas.zerrate@fpl.com"
+  RolePermissionBoundary:
+    Type: String
+    Description: 'Please enter ARN of Neeito Role'
+
+Mappings:
+  AccountIDMap:
+    "237980099910":
+      VPCShortName: FPLSandbox
+      VPCShortNameLower: fplsandbox
+    "977465404123":
+      VPCShortName: FPLDev
+      VPCShortNameLower: fpldev
+      RDSDatabaseName: mdmd
+      SESDomain: "mdm-app@mdm.fpltest.com"
+    "516627182506":
+      VPCShortName: FPLTest
+      VPCShortNameLower: fpltest
+      RDSDatabaseName: mdmt
+      CloudFronturl: https://d2bnqdgsykx3du.cloudfront.net
+      ArtifactS3Bucket: 2ftv-fp197-mdm-s3
+      SNOWSNSTopic: "arn:aws:sns:us-east-1:516627182506:NE789-IncidentTicketProd"
+      SNOWDescriptionSEV3: "APP=MDM arsRequired=0 arsSeverity=SEV3 arsAutoTag=TEST_MDM_LOGS emailRequired=1 emailSubject=Tivoli notification emailAddress=DL-csit-mdm-support-alerts"
+    "485449107334":
+      VPCShortName: FPLQA
+      VPCShortNameLower: fplqa
+      RDSDatabaseName: mdmq
+      CloudFronturl: https://d23hcidq1z9kj8.cloudfront.net
+      ArtifactS3Bucket: 2fqv-fp197-mdm-s3
+      SNOWSNSTopic: "arn:aws:sns:us-east-1:485449107334:NE789-IncidentTicketProd"
+      SNOWDescriptionSEV3: "APP=MDM arsRequired=0 arsSeverity=SEV3 arsAutoTag=TEST_MDM_LOGS emailRequired=1 emailSubject=Tivoli notification emailAddress=DL-csit-mdm-support-alerts"
+    "430004966399":
+      VPCShortName: FPLProd
+      VPCShortNameLower: fplprod
+      RDSDatabaseName: mdmp
+      CloudFronturl: https://d2g11eyg2yo5sj.cloudfront.net
+      ArtifactS3Bucket: 2fpv-fp197-mdm-s3
+      SNOWSNSTopic: "arn:aws:sns:us-east-1:430004966399:NE789-IncidentTicketProd"
+      SNOWDescriptionSEV3: "APP=MDM arsRequired=1 arsSeverity=SEV3 arsAutoTag=TEST_MDM_LOGS emailRequired=1 emailSubject=Tivoli notification emailAddress=DL-csit-mdm-support-alerts"
+    "202055847252":
+      VPCShortName: FPLDR
+      VPCShortNameLower: fpldr
+Resources:
+  BMRASyntheticCanaryAlarms:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-SynthCanary-Alarm
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      AlarmDescription: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWDescriptionSEV3]
+      AlarmActions:
+        - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", SNOWSNSTopic]
+      Namespace: "CloudWatchSynthetics"
+      MetricName: "SuccessPercent"
+      Dimensions:
+        - Name: "CanaryName"
+          Value: !Ref SyntheticCanary
+        - Name: "StepName"
+          Value: !FindInMap [AccountIDMap, !Ref "AWS::AccountId", CloudFronturl]
+      Statistic: "Minimum"
+      ComparisonOperator: "LessThanThreshold"
+      Threshold: 100
+      EvaluationPeriods: 1
+      Period: 60
+      TreatMissingData: "notBreaching"
+  SyntheticCanary:
+    Type: AWS::Synthetics::Canary
+    Properties: 
+      Name: 
+        Fn::Sub:
+          - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-portal
+          - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+            Region:
+              Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+      Code:
+        Handler: pageLoadBlueprint.handler
+        S3Bucket: 
+          Fn::Sub:
+            - 2${AccountCodeLower}${Region}-${AppCodeLower}-${AppName}-cf-s3
+            - AccountCodeLower: !ImportValue Account-Global-AccountCodeLower
+              Region:
+                Fn::ImportValue: !Sub "Account-Global-RegionCodeLower-${AWS::Region}"
+        S3Key: SyntheticCanaryCode/opt/nodejs.zip
+      ExecutionRoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/fp197-read-army-mdm-Lambda-Role
+      RuntimeVersion: syn-nodejs-puppeteer-3.3
+      RunConfig:
+        TimeoutInSeconds: 60
+      ArtifactS3Location:
+        Fn::Join:
+          - ''
+          - - s3://
+            - !FindInMap [AccountIDMap, !Ref "AWS::AccountId", ArtifactS3Bucket]
+            - /nettest/canary-logs/
+      StartCanaryAfterCreation: True
+      Schedule:
+        Expression: 'cron(0 1 * * ? *)'
+      SuccessRetentionPeriod: 31
+      FailureRetentionPeriod: 31
+      Tags:
+        - Key: AppCode
+          Value: !Sub ${AppCode}
