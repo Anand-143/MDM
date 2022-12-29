@@ -1,0 +1,44 @@
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-ReadingImport-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-MeterFailureProcess-GET-Reset-Reads-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-RegisterRead-EDIT-API-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-SendingResponseFileToMainFrame-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-SFTPLayer:4"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-BillingResponseExport-OnCycle-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-RegisterRead-GET-API-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-BillingResponseExport-Contingency-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-TrainCycleDataInsert-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-CalPreviousSeasonReadings-CI-TOD-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-UIQ-CIS-WritingExport-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-SSNBillingReads-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-MeterFailureProcess-Identify-Reset-Reads-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-MailLayer:4" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-UtilsLayer:2"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-BillingResponse-CI-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-BillingResponse-RES-ELE-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-Meter-Fail-Process-User-Action-Reset-Reads-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-MailLayer:4" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-UtilsLayer:2" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-CloudWatchAlarmLayer:2"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-ReadingImportStatistics-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-Meter-Fail-Process-Update-Reset-Reads-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-MailLayer:4" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-UtilsLayer:2" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-CloudWatchAlarmLayer:2"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-CIS-TOD-Meter-Insert-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-BillingRequestImport-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-UtilsLayer:2"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-CycleDayProjections-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-CycleDayProjections-Get-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-CycleDayProjections-MissingDataNotification-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-MailLayer:4" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-CloudWatchAlarmLayer:2"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-CycleDayProjections-ProjectedVSActual-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-MailLayer:4" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-UtilsLayer:2"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-CycleDayProjections-GetBillingResults-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-CycleDayProjections-Accept-Reject-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-MailLayer:4" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-CloudWatchAlarmLayer:2"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-CycleDayProjections-NoActionAlarm-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-MailLayer:4" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-UtilsLayer:2" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-CloudWatchAlarmLayer:2"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-ContingencyTrainCycleDataInsert-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-MeterReadingUploadFailure-Alarm-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-MailLayer:4" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-CloudWatchAlarmLayer:2"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-SSNResetReads-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-CutoverDate-API-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-EmailAlert-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-MailLayer:4"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-DemandReadResponse-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3"
+aws lambda update-function-configuration --function-name 2fqv-fp197-mdm-ExpectedVSReceivedReading-Alarm-LF --layers "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-DatabaseLayer:3" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-MailLayer:4" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-UtilsLayer:2" "arn:aws:lambda:us-east-1:485449107334:layer:2fqv-fp197-mdm-CloudWatchAlarmLayer:2"
+
+
+
+
+
+
+
+MeterFailureProcess-Identify-Reset-Reads-LF ---- utilty not attached
+Fail-Process-User-Action-Reset-Reads-LF------ cloudwatchAlaram and Utils layers are not attached
+Meter-Fail-Process-Update-Reset-Reads-LF------ cloudwatchAlaram and Utils layers are not attached
+CIS-TOD-Meter-Insert-LF--- function not found
